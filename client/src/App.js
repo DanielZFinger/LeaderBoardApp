@@ -7,6 +7,8 @@ function App() {
   const [lost, setLost] = useState(false);
   const [userName, setUserName] = useState('blanket name');
   const [submitting, setSubmitting] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState([]);
 
   useEffect(() => {
     const appearanceTimer = setInterval(() => {
@@ -51,8 +53,12 @@ function App() {
     setClickCount(0); // Reset click counter
     setAppearanceInterval(1000); // Reset appearance interval
     setLost(false);
+    setGameStarted(true);
   };
 
+  const reloadGame = () => {
+    window.location.reload();
+  }
   // Calculate the button color based on the time remaining
   const getColorForButton = (button) => {
     const timeElapsed = Date.now() - button.creationTime;
@@ -100,9 +106,39 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    // Fetch leaderboard data from Mongo DB
+    const fetchLeaderboardData = async () => {
+      try {
+        const response = await fetch('/api/getLeaderboard');
+        if (response.ok) {
+          const data = await response.json();
+          setLeaderboardData(data);
+        } else {
+          console.error('Failed to fetch leaderboard data');
+        }
+      } catch (error) {
+        console.error('Network error:', error);
+      }
+    };
+    fetchLeaderboardData();
+  }, []);
+
   return (
     <div>
-      {lost ? (
+      {!gameStarted ? (
+        <div>
+        <button onClick={restartFunc}>Start Game</button>
+        <h2>Leaderboard</h2>
+        <ol>
+        {leaderboardData.map((entry, index) => (
+          <li key={index}>
+            {entry.name} - {entry.clicks} clicks
+          </li>
+        ))}
+        </ol>
+        </div>
+      ) : lost ? (
         <div>
           <h2>You Lost!</h2>
           <p>Your click count: {clickCount}</p>
@@ -120,29 +156,29 @@ function App() {
               Submit
             </button>
           </form>
-          <button onClick={restartFunc}>Restart</button>
+          <button onClick={reloadGame}>Restart</button>
         </div>
       ) : (
         <div>
-      <div className="click-count">Buttons Clicked: {clickCount}</div>
-      {buttons.map((button) => (
-        <button
-          key={button.key}
-          style={{
-            position: 'absolute',
-            top: button.y,
-            left: button.x,
-            display: button.clicked ? 'none' : 'block',
-            backgroundColor: getColorForButton(button),
-          }}
-          onClick={() => handleButtonClick(button.key)}
-        >
-          Click Me
-        </button>
-      ))}
-      </div>
+          <div className="click-count">Buttons Clicked: {clickCount}</div>
+          {buttons.map((button) => (
+            <button
+              key={button.key}
+              style={{
+                position: 'absolute',
+                top: button.y,
+                left: button.x,
+                display: button.clicked ? 'none' : 'block',
+                backgroundColor: getColorForButton(button),
+              }}
+              onClick={() => handleButtonClick(button.key)}
+            >
+              Click Me
+            </button>
+          ))}
+        </div>
       )}
-      </div>
+    </div>
   );
 }
 
