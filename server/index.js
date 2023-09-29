@@ -25,7 +25,19 @@ const Leaderboard = mongoose.model('Leaderboard', leaderboardSchema, 'leaderboar
 module.exports = Leaderboard;
 
   
-  // Create an API endpoint to save user data
+app.get('/api/getLeaderboard', async (req, res) => {
+    Leaderboard.find()
+      .sort({ clicks: -1 }) //sort our clicks in descending order
+      .limit(3) //limit the results by x(whatever we put in the paranthesis)
+      .then((result) => {
+        res.send(result);
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json({ error: 'Internal server error' });
+      });
+  });
+  
   // Create an API endpoint to save user data
 app.post('/api/saveUserData', async (req, res) => {
     try {
